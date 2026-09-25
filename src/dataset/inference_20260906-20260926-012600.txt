@@ -1,0 +1,9 @@
+select distinct 
+  inference_date, id_subscrip, frequency, breadth, 
+  tenure,
+  monthly_cost
+from `processed_source_table` t
+where inference_date = '2026-09-06'
+and is_zombie = 0 -- exclude zombies
+and had_stop_intent = 0 -- exclude already exhibited churn
+and tenure < 4000 -- exclude extremly large tenure users(over 10 years)
