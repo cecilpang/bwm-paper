@@ -1,0 +1,106 @@
+{
+  "best_parameters": {
+    "clf__C": 0.1,
+    "clf__class_weight": null,
+    "clf__l1_ratio": 0.0,
+    "sampler": "RandomUnderSampler(random_state=42)",
+    "sampler__sampling_strategy": 1.0
+  },
+  "cross_validation": {
+    "best_mean_average_precision": 0.09426750107499356,
+    "best_mean_f1": 0.1484530628095778,
+    "best_mean_precision": 0.08520109654368899,
+    "best_mean_recall": 0.5763111006820759,
+    "best_mean_roc_auc": 0.5894685762115337,
+    "n_splits": 5,
+    "refit_metric": "f1",
+    "strategy": "StratifiedKFold"
+  },
+  "data_quality": {
+    "negative_cost_rows_removed": 1,
+    "rows_after_zombie_pending_stop_exclusions": 618800,
+    "unique_invalid_rows_removed": 573,
+    "valid_rows": 618227,
+    "zero_tenure_nonzero_cost_rows_removed": 572
+  },
+  "decision_threshold": {
+    "oof_f1": 0.16629496683021458,
+    "oof_precision": 0.10971496903055838,
+    "oof_recall": 0.3433717326472136,
+    "selection_data": "out-of-fold predictions on the training split",
+    "value": 0.555916315959128
+  },
+  "feature_engineering": {
+    "monthly_cost": {
+      "formula": "total_cost * 30 / tenure",
+      "zero_tenure_rule": "monthly_cost = 0 when tenure = 0 and total_cost = 0"
+    }
+  },
+  "features": [
+    "frequency",
+    "breadth",
+    "tenure",
+    "monthly_cost"
+  ],
+  "held_out_test_metrics": {
+    "Default threshold (0.50)": {
+      "Average precision": 0.09538790711259501,
+      "F1": 0.148528780227754,
+      "Precision": 0.08503170673810573,
+      "ROC AUC": 0.5913356250849282,
+      "Recall": 0.5864811133200796
+    },
+    "OOF-tuned threshold (0.556)": {
+      "Average precision": 0.09538790711259501,
+      "F1": 0.1670700158557957,
+      "Precision": 0.10960654062340316,
+      "ROC AUC": 0.5913356250849282,
+      "Recall": 0.3511869956730207
+    }
+  },
+  "library_versions": {
+    "imbalanced-learn": "0.14.2",
+    "joblib": "1.6.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "python": "3.13.11",
+    "scikit-learn": "1.9.1"
+  },
+  "model_file": "churn_model_lr.joblib",
+  "model_type": "LogisticRegression",
+  "positive_class": 1,
+  "preprocessing": {
+    "monthly_cost": {
+      "columns": [
+        "monthly_cost"
+      ],
+      "steps": [
+        "median imputation",
+        "log1p",
+        "standard scaling"
+      ]
+    },
+    "regular_features": {
+      "columns": [
+        "frequency",
+        "breadth",
+        "tenure"
+      ],
+      "steps": [
+        "median imputation",
+        "standard scaling"
+      ]
+    }
+  },
+  "saved_at_utc": "2026-09-25T16:25:13.626972+00:00",
+  "source_data": "dataset/trainset_2024_13wk_v3-20250826_091605.csv",
+  "target": "churn_truth",
+  "train_test_split": {
+    "random_state": 42,
+    "test_churn_rate": 0.06915710981349983,
+    "test_rows": 123646,
+    "test_size": 0.2,
+    "train_churn_rate": 0.06915348547558438,
+    "train_rows": 494581
+  }
+}
