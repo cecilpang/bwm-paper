@@ -7,11 +7,11 @@
     "sampler__sampling_strategy": 1.0
   },
   "cross_validation": {
-    "best_mean_average_precision": 0.09426750107499356,
+    "best_mean_average_precision": 0.09426749979423336,
     "best_mean_f1": 0.1484530628095778,
     "best_mean_precision": 0.08520109654368899,
     "best_mean_recall": 0.5763111006820759,
-    "best_mean_roc_auc": 0.5894685762115337,
+    "best_mean_roc_auc": 0.5894685722420185,
     "n_splits": 5,
     "refit_metric": "f1",
     "strategy": "StratifiedKFold"
@@ -63,7 +63,7 @@
     "joblib": "1.6.0",
     "numpy": "2.5.3",
     "pandas": "3.0.6",
-    "python": "3.13.11",
+    "python": "3.14.6",
     "scikit-learn": "1.9.1"
   },
   "model_file": "churn_model_lr.joblib",
@@ -92,8 +92,44 @@
       ]
     }
   },
-  "saved_at_utc": "2026-09-25T16:25:13.626972+00:00",
-  "source_data": "dataset/trainset_2024_13wk_v3-20250826_091605.csv",
+  "probability_correction": {
+    "applies_to": "raw predict_proba output of the saved pipeline",
+    "beta": 0.07429096461828189,
+    "corrected_decision_threshold": 0.08508649592084618,
+    "fit_churn_odds": 1.0,
+    "formula": "beta * p / (beta * p + 1 - p)",
+    "held_out_calibration": {
+      "Constant (train churn rate)": {
+        "Brier score": 0.06437440398887917,
+        "Calibration intercept": null,
+        "Calibration slope": null,
+        "Log loss": 0.25145317487134095,
+        "Mean predicted": 0.06915348547558438,
+        "Observed churn rate": 0.06915710981349983
+      },
+      "Prior-corrected": {
+        "Brier score": 0.06391745908148383,
+        "Calibration intercept": 0.0997580690512796,
+        "Calibration slope": 1.0394339533192414,
+        "Log loss": 0.24807466241047574,
+        "Mean predicted": 0.06922404590783948,
+        "Observed churn rate": 0.06915710981349983
+      },
+      "Raw model": {
+        "Brier score": 0.2443407864148442,
+        "Calibration intercept": -2.602278651182312,
+        "Calibration slope": 1.036843217335892,
+        "Log loss": 0.6812616286322181,
+        "Mean predicted": 0.4897457649755038,
+        "Observed churn rate": 0.06915710981349983
+      }
+    },
+    "imbalance_treatment": "random undersampling (sampling_strategy=1.0)",
+    "method": "prior correction",
+    "train_churn_rate": 0.06915348547558438
+  },
+  "saved_at_utc": "2026-09-28T17:24:39.261924+00:00",
+  "source_data": "../datasets/trainset_2024_13wk_v3-20250826_091605.csv",
   "target": "churn_truth",
   "train_test_split": {
     "random_state": 42,

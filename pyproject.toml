@@ -1,11 +1,12 @@
 [project]
 name = "bwm-paper"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "google-cloud-bigquery>=3.45.2",
     "imbalanced-learn>=0.14.2",
     "ipykernel>=7.3.0",
+    "joblib>=1.6.0",
     "jupyterlab>=4.6.4",
     "matplotlib>=3.11.2",
     "pandas>=3.0.6",
