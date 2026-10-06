@@ -3,7 +3,7 @@ from agents import Agent, ModelSettings
 from openai.types.shared import Reasoning
 from agents.tool import function_tool
 from agent.tool_errors import tool_error_message
-from agent.autobus_db import get_business_rules, get_schema, run_select_query
+from agent.bwm_db import get_business_rules, get_schema, run_select_query
 
 
 AGENT_NAME = "data_query_agent"

@@ -9,16 +9,16 @@ from typing import Any, Dict, Iterable, List
 import pandas as pd
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
-AUTOBUS_DB_PATH = Path(os.getenv("AUTOBUS_DB_PATH", PROJECT_DIR / "database" / "autobus.db"))
-DEFAULT_ORG_ID = int(os.getenv("AUTOBUS_ORG_ID", "1"))
+BWM_DB_PATH = Path(os.getenv("BWM_DB_PATH", PROJECT_DIR / "database" / "bwm.db"))
+DEFAULT_ORG_ID = int(os.getenv("BWM_ORG_ID", "1"))
 
 
 def _connect() -> sqlite3.Connection:
-    if not AUTOBUS_DB_PATH.exists():
+    if not BWM_DB_PATH.exists():
         raise FileNotFoundError(
-            f"AUTOBUS database not found at {AUTOBUS_DB_PATH}; build it with database/build_database.py"
+            f"BWM database not found at {BWM_DB_PATH}; build it with database/build_database.py"
         )
-    conn = sqlite3.connect(f"file:{AUTOBUS_DB_PATH}?mode=ro", uri=True)
+    conn = sqlite3.connect(f"file:{BWM_DB_PATH}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 

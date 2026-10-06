@@ -2,7 +2,7 @@
 
 An agentic system that recommends business actions to reach a stated goal. It discovers the registered prediction models and feasible actions, queries the data, runs what-if simulations, and checks each scenario against the goal.
 
-Everything it knows about the domain comes from the **AUTOBUS** metadata database: entities, attributes, prediction models, features, actions and KPIs. The agent code has no knowledge of churn, subscriptions or prices. The BWM churn case study is registered as organisation 1.
+Everything it knows about the domain comes from the **BWM** metadata database: entities, attributes, prediction models, features, actions and KPIs. The agent code has no knowledge of churn, subscriptions or prices. The BWM churn case study is registered as organisation 1.
 
 ```
 goal (natural language)
@@ -34,10 +34,10 @@ flowchart TD
     subgraph E[Deterministic simulation engine - no LLM]
         SIM[simulation.py] --> MR[model_runtime.py<br/>load + run registered models]
         SIM --> K[kpi.py<br/>safe KPI expressions]
-        SIM --> ADB[autobus_db.py<br/>metadata + analysis frame]
+        SIM --> ADB[bwm_db.py<br/>metadata + analysis frame]
     end
 
-    ADB --> DB[(AUTOBUS SQLite<br/>database/autobus.db<br/>metadata + case study data)]
+    ADB --> DB[(BWM SQLite<br/>database/bwm.db<br/>metadata + case study data)]
     MR --> ART[(saved-models/*.joblib)]
     S -. exact results .-> CTX[WorkflowContext.state simulation]
     CTX -.-> U
@@ -46,7 +46,7 @@ flowchart TD
 ### Design principles
 
 - **LLMs orchestrate; Python calculates.** The agents interpret the goal, choose KPIs, segments and actions, and explain the result. Every number comes from the deterministic engine, and the agents are told to report tool output verbatim. The exact simulation result is also stored in `WorkflowContext.state["simulation"]` and printed after the recommendation, so the LLM's summary can be checked against it.
-- **Metadata-driven.** Models, features, actions and their levels, KPIs, and how entities join all come from the AUTOBUS tables. A new case study, model, action or KPI is added by inserting rows, not by changing code.
+- **Metadata-driven.** Models, features, actions and their levels, KPIs, and how entities join all come from the BWM tables. A new case study, model, action or KPI is added by inserting rows, not by changing code.
 - **Revenue constraint is the only built-in business concept.** A goal may cap how much the revenue KPI may decline. Which KPI counts as revenue, and its formula, come from metadata (`kpi.category = 'revenue'`).
 - **Errors are shown to the model.** Tools use `agent/tool_errors.py::tool_error_message` in place of the SDK default, which hides exceptions. The agent sees the real message, for example `Unknown KPI 'churn'; choose from [...]`, corrects its inputs and retries. Errors are also logged.
 - **Read-only data access.** The database is opened with `mode=ro`. Ad hoc queries must be a single `SELECT`/`WITH` statement and are capped at 200 rows.
@@ -69,7 +69,7 @@ All agents use the [OpenAI Agents SDK](https://github.com/openai/openai-agents-p
 
 | Module | Responsibility |
 |---|---|
-| `autobus_db.py` | Metadata loaders (`get_prediction_models`, `get_feasible_actions`, `get_kpis`, `get_attributes`, `get_relationships`, `get_schema`, `get_business_rules`), the guarded `run_select_query`, and `load_analysis_frame`. That function builds one row per unit entity with the requested `entity.attribute` columns, joining related entities along `entity_relationship` (only joins that don't multiply rows: 1:1 and N:1). |
+| `bwm_db.py` | Metadata loaders (`get_prediction_models`, `get_feasible_actions`, `get_kpis`, `get_attributes`, `get_relationships`, `get_schema`, `get_business_rules`), the guarded `run_select_query`, and `load_analysis_frame`. That function builds one row per unit entity with the requested `entity.attribute` columns, joining related entities along `entity_relationship` (only joins that don't multiply rows: 1:1 and N:1). |
 | `model_runtime.py` | `PredictionModel` loads any registered model by `artifact_format` and maps database attributes to model inputs (`model_input_name`, `input_order`, checked against the artifact's `feature_names_in_`). It returns the probability of `positive_class`, a value or a class, then applies the registered `output_transform` (currently `prior_correction`). New formats and transforms are added to `ARTIFACT_LOADERS` / `OUTPUT_TRANSFORMS`. |
 | `kpi.py` | Safe KPI evaluation. The expression is parsed with `ast`, and only `entity.attribute` names, numbers, arithmetic, comparisons, `and`/`or`/`not` and `abs`/`log`/`exp`/`minimum`/`maximum` are allowed. The aggregation (`sum`/`mean`/`count`/`min`/`max`) is then applied. |
 | `simulation.py` | `simulate(segment_filters, goal, action_ids, include_combinations)`: the scenario engine described below. `SegmentFilter` and `GoalSpec` are pydantic models and double as the tool's JSON schema. |
@@ -88,7 +88,7 @@ All agents use the [OpenAI Agents SDK](https://github.com/openai/openai-agents-p
    - `cheapest_meeting_target`: the smallest revenue loss that reaches the target
    - `largest_objective_improvement`: the largest improvement overall
 
-## AUTOBUS metadata model (`database/autobus_ddl.sql`)
+## BWM metadata model (`database/bwm_ddl.sql`)
 
 Every table except `model_type` is partitioned by `org_id`.
 
@@ -122,7 +122,7 @@ Requires Python ≥ 3.14 and [uv](https://docs.astral.sh/uv/).
 ```bash
 uv sync
 
-# Build the AUTOBUS database: metadata, case study tables and data
+# Build the BWM database: metadata, case study tables and data
 uv run python database/build_database.py --force
 
 # Run the campaign recommender (needs an OpenAI API key)
@@ -135,8 +135,8 @@ The output is the planner's `CampaignRecommendation` as JSON, followed by the ex
 | Environment variable | Default | Purpose |
 |---|---|---|
 | `OPENAI_API_KEY` | none | LLM access for the agents |
-| `AUTOBUS_DB_PATH` | `database/autobus.db` | AUTOBUS database to use |
-| `AUTOBUS_ORG_ID` | `1` | Organisation whose metadata is used |
+| `BWM_DB_PATH` | `database/bwm.db` | BWM database to use |
+| `BWM_ORG_ID` | `1` | Organisation whose metadata is used |
 
 ## Extending
 
@@ -146,7 +146,7 @@ None of these need code changes. Insert the rows, rebuild or update the database
 - **New KPI or goal metric:** a `kpi` row with an expression over `entity.attribute` names (prediction attributes included), plus its `kpi_attribute` rows.
 - **New model:** a `prediction_model` row (artifact, unit entity, prediction attribute, kind, transform), plus `predictive_feature` rows that map attributes to model inputs.
 - **New entity:** `entity` and `attribute` rows, plus an `entity_relationship` row that joins it to the unit entity.
-- **New organisation or case study:** a separate DDL script like `bwm_case_study_ddl.sql`, run with `AUTOBUS_ORG_ID` set to the new org.
+- **New organisation or case study:** a separate DDL script like `bwm_case_study_ddl.sql`, run with `BWM_ORG_ID` set to the new org.
 
 Code changes are needed only for a new artifact format or output transform (`model_runtime.py`) or a new action type (`simulation.py::_apply_action`).
 
@@ -156,16 +156,16 @@ Code changes are needed only for a new artifact format or output transform (`mod
 - **Uniform actions.** Each scenario applies an action level uniformly to the whole segment. There is no per-row optimisation.
 - **Business rules are not enforced.** The planner reports them, but the engine doesn't apply them.
 - **No derived features.** Features must exist as stored attributes. For example, `monthly_cost` is precomputed when the data is loaded.
-- **ERD out of date.** The Lucidchart ERD exports (`database/*_ddl.csv`) don't yet include the simulation metadata tables and columns added in `autobus_ddl.sql`.
+- **ERD out of date.** The Lucidchart ERD exports (`database/autobus_ddl.csv`, `database/bwm_case_study_ddl.csv`) still use the former name AUTOBUS, and don't yet include the simulation metadata tables and columns added in `bwm_ddl.sql`.
 
 ## Repository layout
 
 ```
-database/        AUTOBUS DDL, BWM case study DDL, build and load scripts, autobus.db
+database/        BWM DDL, BWM case study DDL, build and load scripts, bwm.db
 datasets/        training and inference datasets
 notebooks/       Train.ipynb (model training), Inference.ipynb (inference, discount what-ifs)
 saved-models/    churn model artifact and its metadata JSON
 src/
   churn_reduction_campaign.py   entry point: goal → recommendation
-  agent/                        agents, simulation engine, AUTOBUS access
+  agent/                        agents, simulation engine, BWM access
 ```

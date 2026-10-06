@@ -1,4 +1,4 @@
-"""Load and run any registered prediction model from its AUTOBUS metadata."""
+"""Load and run any registered prediction model from its BWM metadata."""
 
 from functools import lru_cache
 from typing import Any, Callable, Dict, List
@@ -7,7 +7,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from agent.autobus_db import PROJECT_DIR, get_prediction_models
+from agent.bwm_db import PROJECT_DIR, get_prediction_models
 
 
 def _prior_correction(probability: np.ndarray, beta: float) -> np.ndarray:

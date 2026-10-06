@@ -1,4 +1,4 @@
--- AUTOBUS schema (SQLite), generated from the ERD page of autobus_ddl.csv, plus the
+-- BWM schema (SQLite), generated from the ERD page of autobus_ddl.csv, plus the
 -- simulation metadata (attribute types/keys, entity_relationship, model runtime
 -- columns, feature input mapping, action_type, action_level, kpi, kpi_attribute)
 -- that is not yet in the ERD.

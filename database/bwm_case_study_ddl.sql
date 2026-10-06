@@ -1,6 +1,6 @@
 -- BWM case study schema (SQLite), generated from the "Case Study ERD" page of
--- bwm_case_study_ddl.csv, plus the rows that register it in the AUTOBUS
--- metadata tables. Run after autobus_ddl.sql against the same database.
+-- bwm_case_study_ddl.csv, plus the rows that register it in the BWM
+-- metadata tables. Run after bwm_ddl.sql against the same database.
 -- SQLite only enforces foreign keys when enabled on each connection:
 PRAGMA foreign_keys = ON;
 
@@ -35,7 +35,7 @@ CREATE TABLE subscription_predictions (
 );
 
 -- ---------------------------------------------------------------------------
--- AUTOBUS metadata for the case study
+-- BWM metadata for the case study
 -- ---------------------------------------------------------------------------
 
 INSERT INTO organization (org_id, org_name, description) VALUES

@@ -5,7 +5,7 @@ from openai.types.shared import Reasoning
 from agents.tool import function_tool
 from agent.tool_errors import tool_error_message
 from agent.agent_session import WorkflowContext
-from agent.autobus_db import get_attributes, get_feasible_actions, get_kpis, get_prediction_models
+from agent.bwm_db import get_attributes, get_feasible_actions, get_kpis, get_prediction_models
 from agent.simulation import GoalSpec, SegmentFilter, simulate
 
 

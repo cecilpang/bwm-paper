@@ -2,7 +2,7 @@ import json
 from agents import Agent, ModelSettings
 from openai.types.shared import Reasoning
 from agents.tool import function_tool
-from agent.autobus_db import get_prediction_models
+from agent.bwm_db import get_prediction_models
 from agent.llm_connection import get_gemini
 
 

@@ -1,12 +1,12 @@
-"""Build the AUTOBUS SQLite database with the BWM case study.
+"""Build the BWM SQLite database with the BWM case study.
 
 Steps:
-  1. autobus_ddl.sql          - AUTOBUS metadata tables
-  2. bwm_case_study_ddl.sql   - case study tables + their AUTOBUS metadata rows
+  1. bwm_ddl.sql          - BWM metadata tables
+  2. bwm_case_study_ddl.sql   - case study tables + their BWM metadata rows
   3. load_case_study_data.py  - case study rows from the inference dataset
 
 Usage:
-    python database/build_database.py [--db database/autobus.db] [--csv CSV] [--force]
+    python database/build_database.py [--db database/bwm.db] [--csv CSV] [--force]
 """
 
 import argparse
@@ -17,7 +17,7 @@ from load_case_study_data import DEFAULT_CSV, DEFAULT_MODEL_META, load_case_stud
 
 DATABASE_DIR = Path(__file__).resolve().parent
 DDL_SCRIPTS = [
-    DATABASE_DIR / 'autobus_ddl.sql',
+    DATABASE_DIR / 'bwm_ddl.sql',
     DATABASE_DIR / 'bwm_case_study_ddl.sql',
 ]
 TABLES = [
@@ -44,7 +44,7 @@ def build_database(db_path, csv_path=DEFAULT_CSV, model_meta_path=DEFAULT_MODEL_
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--db', type=Path, default=DATABASE_DIR / 'autobus.db',
+    parser.add_argument('--db', type=Path, default=DATABASE_DIR / 'bwm.db',
                         help='database file to create')
     parser.add_argument('--csv', type=Path, default=DEFAULT_CSV, help='inference dataset')
     parser.add_argument('--model-meta', type=Path, default=DEFAULT_MODEL_META,

@@ -1,4 +1,4 @@
-"""Deterministic what-if simulations of feasible actions, driven by the AUTOBUS metadata.
+"""Deterministic what-if simulations of feasible actions, driven by the BWM metadata.
 
 A simulation:
   1. loads one row per unit entity (e.g. subscription) with every attribute used by the
@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from agent.autobus_db import get_attributes, get_feasible_actions, get_kpis, load_analysis_frame
+from agent.bwm_db import get_attributes, get_feasible_actions, get_kpis, load_analysis_frame
 from agent.kpi import evaluate_kpi, referenced_attributes
 from agent.model_runtime import PredictionModel, get_models
 

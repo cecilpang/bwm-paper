@@ -8,7 +8,7 @@ notebooks/Inference.ipynb. The dataset has no recency, so that column is NULL.
 Existing rows in the three tables are replaced, so the load can be re-run.
 
 Usage:
-    python database/load_case_study_data.py path/to/autobus.db [--csv CSV]
+    python database/load_case_study_data.py path/to/bwm.db [--csv CSV]
 """
 
 import argparse
