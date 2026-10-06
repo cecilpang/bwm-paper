@@ -34,8 +34,8 @@ async def main():
         set_tracing_disabled(True)
 
         goal = """
-            Reduce the churn rate of high frequency subscripions (top 10%) by at least 0.1 percentage point.
-            For example from 2.0% to 1.9%.
+            Reduce the churn rate of high frequency subscripions (top 10%) by at least 0.05 percentage point.
+            For example from 2.0% to 1.95%.
             The total monthly revuenue must not decline by more than $200,000
         """
 
