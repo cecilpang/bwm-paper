@@ -1,4 +1,5 @@
 # bwm-paper
+## Reference implementatin of the case study in the paper "Business World Model" <https://arxiv.org/abs/2606.10044>
 
 An agentic system that recommends business actions to reach a stated goal. It discovers the registered prediction models and feasible actions, queries the data, runs what-if simulations, and checks each scenario against the goal.
 
