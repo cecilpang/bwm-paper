@@ -9,16 +9,24 @@ Task: Recommend churn reduction campaign.
 
 
 def print_simulation(simulation: dict):
+    goal, objective, revenue = simulation["goal"], simulation["objective_kpi"], simulation["revenue_kpi"]
     evaluation = simulation["evaluation"]
-    print(f"\nSimulation: {simulation['action']}")
-    print(f"Segment: {simulation['segment']['definition']}, {simulation['segment']['size']:,} subscriptions")
-    print(f"Goal: churn -{evaluation['goal']['target_churn_reduction_pp']}pp, "
-          f"revenue decline <= ${evaluation['goal']['max_revenue_decline']:,.0f} -> {evaluation['verdict']}")
-    print(f"{'Discount':>8} {'Mean churn':>11} {'Change pp':>10} {'Revenue change':>15} {'Churn ok':>9} {'Revenue ok':>11}")
-    for s in evaluation["scenarios"]:
-        print(f"{s['discount_rate']:>8.0%} {s['segment_mean_churn_probability']:>11.4%} "
-              f"{s['churn_change_pp']:>+10.4f} {s['revenue_change']:>+15,.2f} "
-              f"{str(s['meets_churn_target']):>9} {str(s['meets_revenue_constraint']):>11}")
+    segment = simulation["segment"]
+    print(f"\nSegment: {' and '.join(segment['filters']) or 'all'}: "
+          f"{segment['size']:,} of {segment['population_size']:,} {simulation['unit_entity']} rows")
+    print(f"Objective: {goal['direction']} {objective['kpi_name']} ({objective['scope']}) "
+          f"by >= {goal['target_change']:g} {goal['target_mode']}")
+    if revenue:
+        print(f"Revenue constraint: {revenue['kpi_name']} decline <= {goal['max_revenue_decline']:,.0f}")
+    print(f"Verdict: {evaluation['verdict']}; recommended: "
+          f"{(evaluation['recommended'] or evaluation['best_within_budget'] or {}).get('label')}")
+    width = max(len(s["label"]) for s in simulation["scenarios"])
+    print(f"{'Scenario':<{width}} {objective['kpi_name']:>24} {'Improvement':>12} "
+          f"{'Revenue change':>15} {'Target ok':>9} {'Revenue ok':>10}")
+    for s in simulation["scenarios"]:
+        print(f"{s['label']:<{width}} {s['objective_value']:>24.6g} {s['objective_improvement']:>+12.4f} "
+              f"{s['revenue_change']:>+15,.2f} {str(s['meets_objective_target']):>9} "
+              f"{str(s['meets_revenue_constraint']):>10}")
 
 
 async def main():

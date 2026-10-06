@@ -1,69 +1,106 @@
 import json
+from typing import List, Optional
 from agents import Agent, ModelSettings, RunContextWrapper
 from openai.types.shared import Reasoning
 from agents.tool import function_tool
 from agent.tool_errors import tool_error_message
 from agent.agent_session import WorkflowContext
-from agent.simulation import allowed_discount_rates, evaluate_goal, simulate_uniform_discount
+from agent.autobus_db import get_attributes, get_feasible_actions, get_kpis, get_prediction_models
+from agent.simulation import GoalSpec, SegmentFilter, simulate
 
 
 AGENT_NAME = "simulation_agent"
 
-
-@function_tool(failure_error_function=tool_error_message)
-async def get_simulation_actions() -> str:
-    """
-    Get the discount rates allowed by the feasible action on subscription.monthly_cost.
-    """
-    return json.dumps({"discount_rates": allowed_discount_rates()})
+# Largest number of scenarios returned to the model in full; the rest are summarised.
+MAX_SCENARIOS_IN_RESPONSE = 60
 
 
 @function_tool(failure_error_function=tool_error_message)
-async def run_discount_simulation(
+async def get_simulation_catalog() -> str:
+    """
+    Get what can be simulated: prediction models, feasible actions with their allowed levels,
+    KPIs (named metrics a goal can target) and the attributes available for segment filters.
+    """
+    catalog = {
+        "models": [
+            {
+                "model_id": m["model_id"], "short_desc": m["short_desc"],
+                "unit_entity": m["unit_entity_name"],
+                "prediction": f"{m['prediction_entity_name']}.{m['prediction_attribute_name']}",
+                "prediction_kind": m["prediction_kind"],
+                "features": [f"{f['entity_name']}.{f['attribute_name']}" for f in m["predictive_features"]],
+            }
+            for m in get_prediction_models()
+        ],
+        "actions": get_feasible_actions(),
+        "kpis": get_kpis(),
+        "attributes": [
+            {"attribute": f"{a['entity_name']}.{a['attribute_name']}", "data_type": a["data_type"],
+             "description": a["description"]}
+            for a in get_attributes() if not a["is_key"]
+        ],
+    }
+    return json.dumps(catalog, indent=2)
+
+
+@function_tool(failure_error_function=tool_error_message)
+async def run_simulation(
     ctx: RunContextWrapper[WorkflowContext],
-    segment_attribute: str,
-    top_share: float,
-    target_churn_reduction_pp: float,
-    max_revenue_decline: float,
+    segment_filters: List[SegmentFilter],
+    goal: GoalSpec,
+    action_ids: Optional[List[int]],
+    include_combinations: bool,
 ) -> str:
     """
-    Simulate a uniform monthly_cost discount (every allowed rate, plus the 0% baseline) for the
-    segment of subscriptions with the highest values of an attribute, using the churn
-    prediction model, and evaluate each scenario against the goal.
+    Simulate feasible actions applied uniformly to a segment, using the prediction models,
+    and evaluate every scenario (baseline, each action level, and combinations across
+    actions) against the goal.
 
     Args:
-        segment_attribute: Attribute defining the segment: "frequency", "breadth", "tenure_days"
-            or "monthly_cost".
-        top_share: Share of subscriptions with the highest attribute values, as a fraction
-            between 0 and 1, e.g. 0.10 for the top 10%.
-        target_churn_reduction_pp: Required drop of the segment's mean churn probability, in
-            absolute percentage points (2.0 means 2 pp).
-        max_revenue_decline: Largest allowed decline of total expected monthly revenue, in dollars.
+        segment_filters: Filters that together define the segment (all must hold).
+        goal: The objective KPI target and the revenue constraint.
+        action_ids: Feasible actions to simulate; null for all.
+        include_combinations: Also simulate combinations of levels of different actions.
     """
-    simulation = simulate_uniform_discount(segment_attribute, top_share)
-    evaluation = evaluate_goal(simulation, target_churn_reduction_pp, max_revenue_decline)
-    result = {**{k: v for k, v in simulation.items() if k != "scenarios"}, "evaluation": evaluation}
+    result = simulate(segment_filters, goal, action_ids, include_combinations)
     ctx.context.state["simulation"] = result
-    return json.dumps(result, indent=2)
+
+    response = dict(result)
+    scenarios = result["scenarios"]
+    if len(scenarios) > MAX_SCENARIOS_IN_RESPONSE:
+        evaluation = result["evaluation"]
+        highlighted = {0} | {
+            pick["scenario_id"] for pick in evaluation.values() if isinstance(pick, dict)
+        } | set(evaluation["feasible_scenario_ids"][:MAX_SCENARIOS_IN_RESPONSE])
+        response["scenarios"] = [s for s in scenarios if s["scenario_id"] in highlighted]
+        response["omitted_scenarios"] = len(scenarios) - len(response["scenarios"])
+    return json.dumps(response, indent=2)
 
 
 simulation_agent = Agent(
     name=AGENT_NAME,
     instructions=f"""
-    Your role is to run what-if simulations of feasible actions with the churn prediction model
+    Your role is to run what-if simulations of feasible actions with the prediction models
     and evaluate them against the goal given by the controller agent.
-    1. Use tool to retrieve the allowed discount rates.
-    2. Translate the goal into the simulation parameters: the segment attribute and top share,
-       the churn reduction target in absolute percentage points, and the revenue-decline cap in dollars.
-    3. Use tool to run the simulation with those parameters.
-    4. Output the parameters used, the verdict, the full scenario table (discount rate, segment mean
-       churn probability, churn change in pp, revenue change, whether each constraint is met),
-       the best scenario within the revenue budget, and the cheapest scenario that meets the churn target.
+    1. Use tool to retrieve the simulation catalog: models, actions and levels, KPIs and attributes.
+    2. Translate the goal into the simulation inputs, using only names from the catalog:
+       - segment_filters: the population the goal targets, e.g. "top 10%" by an attribute is
+         op "top_share" with value 0.10; thresholds use gt/ge/lt/le/eq/ne/between/in.
+       - goal.objective_kpi: the KPI that best matches the goal's metric, its scope (segment or
+         population), direction, target_change and target_mode. For fraction KPIs (unit
+         probability/rate), "N percentage points" is percentage_points and "N%" of the baseline
+         is relative_percent; state which reading you used.
+       - goal.max_revenue_decline: the allowed revenue decline in currency units, or null.
+       - action_ids: the actions relevant to the goal, or null for all.
+    3. Use tool to run the simulation.
+    4. Output the inputs used, the segment, the verdict, the scenario table (label, objective value,
+       objective improvement, revenue change, whether each constraint is met), and the
+       recommended, best-within-budget, cheapest-meeting-target and largest-improvement scenarios.
     Report numbers exactly as returned by the tool; do not compute or estimate any of your own.
-    If a tool returns an error, correct the arguments according to the error message and retry;
+    If a tool returns an error, correct the inputs according to the error message and retry;
     if it still fails, return the error message and stop.
     """,
-    tools=[get_simulation_actions, run_discount_simulation],
+    tools=[get_simulation_catalog, run_simulation],
     model='gpt-6.1-sol',
     model_settings=ModelSettings(reasoning=Reasoning(effort="medium")),
 )

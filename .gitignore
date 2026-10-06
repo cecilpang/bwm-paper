@@ -14,7 +14,8 @@ wheels/
 .env
 
 # data
-database/
+database/*.db
+database/*.csv
 
 # OSX
 **/.DS_Store

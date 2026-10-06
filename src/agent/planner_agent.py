@@ -13,22 +13,25 @@ AGENT_NAME = "planner_agent"
 
 
 class ScenarioResult(BaseModel):
-    action: str = Field(description="The simulated action, e.g. '10% discount on monthly_cost'")
-    segment_mean_churn_probability: float
-    churn_change_pp: float = Field(description="Change of the segment mean churn probability, in percentage points")
-    revenue_change: float = Field(description="Change of total expected monthly revenue, in dollars")
-    meets_churn_target: bool
+    action: str = Field(description="The simulated action(s) and levels, or the baseline")
+    objective_value: float = Field(description="Value of the objective KPI")
+    objective_improvement: float = Field(description="Improvement of the objective KPI, in the goal's target units")
+    revenue_change: float = Field(description="Change of the total revenue KPI, in its currency units")
+    meets_objective_target: bool
     meets_revenue_constraint: bool
 
 
 class CampaignRecommendation(BaseModel):
-    goal_interpretation: str = Field(description="Segment, churn metric, target and revenue constraint used")
+    goal_interpretation: str = Field(
+        description="Segment, objective KPI, target (and how the goal's wording was read) and revenue constraint used"
+    )
     models_used: List[str]
-    baseline: str = Field(description="Baseline segment size, mean churn probability and expected monthly revenue")
+    kpis_used: List[str] = Field(description="KPI names and definitions used for the objective and the revenue constraint")
+    baseline: str = Field(description="Baseline segment size, objective KPI value and revenue KPI value")
     scenarios: List[ScenarioResult]
     verdict: Literal["feasible", "infeasible"]
     recommended_action: str
-    tradeoff_options: List[str] = Field(description="Alternatives when the goal cannot be fully met")
+    tradeoff_options: List[str] = Field(description="Alternatives when the goal cannot be fully met, or close alternatives")
     caveats: List[str]
 
 
@@ -39,19 +42,21 @@ planner_agent = Agent(
     1. Use agent as tool to get info of useful machine learning (ML) models from the model registry.
     2. Based on the result of step 1, use agent as tool to obtain feasible actions.
     3. Use agent as tool to query the database for the baseline of the population targeted by the goal
-       (segment size, percentile cutoff, mean churn probability, monthly revenue) and for business rules.
-    4. Translate the goal into a simulation spec (segment attribute and top share of subscriptions, churn reduction
-       target in absolute percentage points, revenue-decline cap in dollars) and use agent as tool to
-       run the simulations of the feasible actions and evaluate them against the goal.
+       and for business rules.
+    4. Use agent as tool to simulate the feasible actions with the models and evaluate them against
+       the goal. Pass the goal in full, together with the segment it targets, the metric it wants to
+       change (with the direction and size of the change, as worded in the goal) and the revenue
+       constraint; the simulation agent maps them to the KPIs and attributes in its catalog.
     5. Based on the results of steps 1-4, recommend a campaign:
-       - If a scenario meets the goal, recommend the feasible scenario with the smallest revenue loss.
+       - If a scenario meets the goal, recommend the simulation's recommended scenario
+         (the feasible scenario with the smallest revenue loss).
        - If none does, set the verdict to infeasible, recommend the best scenario within the revenue
-         budget, and list as trade-off options the cheapest scenario that meets the churn target
-         (or state that none does) and the scenario with the largest churn reduction and its cost.
+         budget, and list as trade-off options the cheapest scenario that meets the objective target
+         (or state that none does) and the scenario with the largest improvement and its cost.
        - Mention any business rules that constrain the campaign.
     If step 1 or 2 returns no results, do not recommend anything and stop.
     Do not suggest any actions other than the feasible actions. Use only numbers returned by the tools.
-    Note in the caveats that the churn model was trained on observational data, so simulated
+    Note in the caveats that the models were trained on observational data, so simulated
     effects are model sensitivities and not causal estimates.
     """,
     tools=[ml_model_discovery_agent.as_tool(
@@ -69,9 +74,9 @@ planner_agent = Agent(
         simulation_agent.as_tool(
             tool_name="simulation_agent",
             tool_description=(
-                "Simulate feasible actions with the churn prediction model and evaluate them against the goal. "
-                "Input must state the segment (attribute and top share, e.g. top 10% by frequency), the churn reduction target in "
-                "absolute percentage points and the revenue-decline cap in dollars."
+                "Simulate feasible actions with the prediction models and evaluate them against the goal. "
+                "Input must state the goal, the targeted segment, the metric to change with the direction and "
+                "size of the change, and the revenue constraint."
             ),
         )],
     output_type=CampaignRecommendation,
