@@ -90,7 +90,135 @@ All agents use the [OpenAI Agents SDK](https://github.com/openai/openai-agents-p
 
 ## BWM metadata model (`database/bwm_ddl.sql`)
 
-Every table except `model_type` is partitioned by `org_id`.
+Every table except `model_type` is partitioned by `org_id`. `org_id` is part of every primary and foreign key, but for readability the diagram only links `organization` to the tables that reference it directly.
+
+```mermaid
+erDiagram
+    organization ||--o{ entity : "owns"
+    organization ||--o{ business_rule : "owns"
+    entity ||--o{ attribute : "has"
+    attribute ||--o{ entity_relationship : "from_entity.from_attribute"
+    attribute ||--o{ entity_relationship : "to_entity.to_attribute"
+    model_type ||--o{ prediction_model : "typed as"
+    attribute ||--o{ prediction_model : "prediction attribute"
+    entity ||--o{ prediction_model : "unit entity (scored rows)"
+    prediction_model ||--|{ predictive_feature : "inputs"
+    attribute ||--o{ predictive_feature : "is input"
+    attribute ||--o{ feasible_action : "acted on by"
+    feasible_action ||--|{ action_level : "allowed values"
+    entity ||--o{ kpi : "unit entity (aggregated rows)"
+    kpi ||--|{ kpi_attribute : "uses"
+    attribute ||--o{ kpi_attribute : "used by"
+    business_rule ||--o{ rule_entity_link : "governs"
+    entity ||--o{ rule_entity_link : "governed"
+    attribute |o--o{ rule_entity_link : "governed (optional)"
+
+    organization {
+        int org_id PK
+        text org_name
+        text description
+    }
+    model_type {
+        int model_type_id PK
+        text model_type
+    }
+    entity {
+        int org_id PK, FK
+        text entity_name PK
+        text description
+    }
+    attribute {
+        int org_id PK, FK
+        text entity_name PK, FK
+        text attribute_name PK
+        text description
+        text data_type "numeric | categorical | date | id"
+        int is_key "0 | 1"
+    }
+    entity_relationship {
+        int org_id PK, FK
+        text from_entity PK, FK
+        text from_attribute PK, FK
+        text to_entity PK, FK
+        text to_attribute PK, FK
+        text cardinality "1:1 | N:1 | 1:N"
+    }
+    prediction_model {
+        int org_id PK, FK
+        int model_id PK
+        text short_desc
+        text description
+        int model_type_id FK
+        text prediction_entity_name FK
+        text prediction_attribute_name FK
+        text unit_entity_name FK
+        text artifact_path "relative to project dir"
+        text artifact_format "sklearn_joblib"
+        text prediction_kind "probability | value | class"
+        text positive_class
+        text output_transform "JSON, e.g. prior_correction"
+        real decision_threshold
+    }
+    predictive_feature {
+        int org_id PK, FK
+        int model_id PK, FK
+        text entity_name PK, FK
+        text attribute_name PK, FK
+        text description
+        text model_input_name UK "column the artifact expects"
+        int input_order UK
+    }
+    feasible_action {
+        int org_id PK
+        int action_id PK
+        text entity_name FK
+        text attribute_name FK
+        text description
+        text action_type "scale | add | set"
+    }
+    action_level {
+        int org_id PK, FK
+        int action_id PK, FK
+        int level_id PK
+        real value
+        text label
+    }
+    kpi {
+        int org_id PK, FK
+        int kpi_id PK
+        text kpi_name UK
+        text description
+        text unit_entity_name FK
+        text aggregation "sum | mean | count | min | max"
+        text expression "over entity.attribute names"
+        text unit "e.g. probability, rate, USD"
+        text category "outcome | revenue | volume"
+    }
+    kpi_attribute {
+        int org_id PK, FK
+        int kpi_id PK, FK
+        text entity_name PK, FK
+        text attribute_name PK, FK
+    }
+    business_rule {
+        int org_id PK, FK
+        int business_rule_id PK
+        text description
+    }
+    rule_entity_link {
+        int org_id FK
+        int business_rule_id FK
+        text entity_name FK
+        text attribute_name FK "nullable"
+    }
+```
+
+How the simulation engine uses the model:
+
+- **Joining data.** `entity_relationship` lets `load_analysis_frame` join every entity the simulation needs into one row per *unit entity*. A model's unit entity is `prediction_model.unit_entity_name`; a KPI's is `kpi.unit_entity_name`.
+- **Running models.** `prediction_model` and `predictive_feature` say how to run a model: which artifact to load, which attributes to feed it under which input names and in what order, and how to post-process its output. The output fills the prediction attribute.
+- **Actions.** `feasible_action` and `action_level` define which actions can change which attribute, and the allowed values.
+- **Goals.** `kpi` and `kpi_attribute` define the metrics a goal can target, and which one is the revenue KPI (`category = 'revenue'`).
 
 | Table | Purpose |
 |---|---|
@@ -154,9 +282,6 @@ Code changes are needed only for a new artifact format or output transform (`mod
 
 - **Not causal.** Simulated effects are sensitivities of models trained on observational data, not causal estimates of how customers would respond.
 - **Uniform actions.** Each scenario applies an action level uniformly to the whole segment. There is no per-row optimisation.
-- **Business rules are not enforced.** The planner reports them, but the engine doesn't apply them.
-- **No derived features.** Features must exist as stored attributes. For example, `monthly_cost` is precomputed when the data is loaded.
-- **ERD out of date.** The Lucidchart ERD exports (`database/autobus_ddl.csv`, `database/bwm_case_study_ddl.csv`) still use the former name AUTOBUS, and don't yet include the simulation metadata tables and columns added in `bwm_ddl.sql`.
 
 ## Repository layout
 
