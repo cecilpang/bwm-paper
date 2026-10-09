@@ -27,6 +27,4 @@ uv.lock
 scratchpad/
 
 # notebooks are not needed
-
-notebooks/Inference.ipynb
-notebooks/Train.ipynb
+notebooks/
