@@ -285,14 +285,4 @@ Code changes are needed only for a new artifact format or output transform (`mod
 - **Not causal.** Simulated effects are sensitivities of models trained on observational data, not causal estimates of how customers would respond.
 - **Uniform actions.** Each scenario applies an action level uniformly to the whole segment. There is no per-row optimisation.
 
-## Repository layout
 
-```
-database/        BWM DDL, BWM case study DDL, build and load scripts, bwm.db
-datasets/        training and inference datasets
-notebooks/       Train.ipynb (model training), Inference.ipynb (inference, discount what-ifs)
-saved-models/    churn model artifact and its metadata JSON
-src/
-  churn_reduction_campaign.py   entry point: goal → recommendation
-  agent/                        agents, simulation engine, BWM access
-```
