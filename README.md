@@ -1,9 +1,9 @@
 # bwm-paper
-### Reference implementatin of the case study in the paper "Business World Model" <https://arxiv.org/abs/2606.10044>
+### Reference design and implementatin of "Business World Model" <https://arxiv.org/abs/2606.10044>
 
 An agentic system that recommends business actions to reach a stated goal. It discovers the registered prediction models and feasible actions, queries the data, runs what-if simulations, and checks each scenario against the goal.
 
-Everything it knows about the domain comes from the **BWM** metadata database: entities, attributes, prediction models, features, actions and KPIs. The agent code has no knowledge of churn, subscriptions or prices. The BWM churn case study is registered as organisation 1.
+The following case study is implemented on top of the system.
 
 ```
 goal (natural language)
@@ -14,6 +14,7 @@ goal (natural language)
 recommendation (structured): goal interpretation, models and KPIs used, baseline,
 scenario table, verdict (feasible / infeasible), recommended action, trade-offs, caveats
 ```
+Everything it knows about the case study domain comes from the data in the **BWM** metadata database: entities, attributes, prediction models, features, actions and KPIs. The BWM code has no knowledge of churn, subscriptions or prices.
 
 ## Architecture
 
