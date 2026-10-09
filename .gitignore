@@ -22,3 +22,9 @@ database/*.csv
 
 # uv
 uv.lock
+
+# temp files
+scratchpad/
+
+# notebooks are not needed
+
