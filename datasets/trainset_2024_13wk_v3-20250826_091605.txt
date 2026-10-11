@@ -1,1 +1,0 @@
- select * from processed_source_table_trainset_2024_Q4_13wks
