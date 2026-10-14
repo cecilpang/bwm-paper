@@ -20,7 +20,7 @@ import joblib
 import pandas as pd
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_CSV = PROJECT_DIR / 'datasets' / 'inference_20260906-20260926-012600.csv'
+DEFAULT_CSV = PROJECT_DIR / 'datasets' / 'case_study_data.csv'
 DEFAULT_MODEL_META = PROJECT_DIR / 'saved-models' / 'churn_model_lr_meta.json'
 
 

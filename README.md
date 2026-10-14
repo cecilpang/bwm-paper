@@ -236,7 +236,7 @@ How the simulation engine uses the model:
 
 ### BWM case study (org 1, `database/bwm_case_study_ddl.sql`)
 
-- **Data tables:** `subscription` (monthly_cost, tenure_days), `content_consumption_statistics` (frequency, breadth, recency), and `subscription_predictions` (churn_probability). Each has one row per `subs_id`, loaded from the inference dataset by `database/load_case_study_data.py`.
+- **Data tables:** `subscription` (monthly_cost, tenure_days), `content_consumption_statistics` (frequency, breadth, recency), and `subscription_predictions` (churn_probability). Each has one row per `subs_id`, loaded from `datasets/case_study_data.csv` by `database/load_case_study_data.py`.
 - **Model 1:** logistic regression churn model (`saved-models/churn_model_lr.joblib`). It scores `subscription` and uses frequency, breadth, tenure_days (as model input `tenure`) and monthly_cost, with prior-corrected probabilities. See `notebooks/Train.ipynb`.
 - **Action 1:** scale `subscription.monthly_cost` by 0.95, 0.90, 0.85, 0.80 or 0.75 (a 5–25% discount).
 - **KPIs:**

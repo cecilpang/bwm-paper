@@ -29,6 +29,6 @@ scratchpad/
 # notebooks are not needed
 notebooks/
 
-# datasets: only track the inference CSV
+# datasets: only track the case study CSV
 datasets/*
-!datasets/inference_20260906-20260926-012600.csv
+!datasets/case_study_data.csv
